@@ -1,0 +1,1 @@
+nvcc problem_1.cu -o problem_1.exe
