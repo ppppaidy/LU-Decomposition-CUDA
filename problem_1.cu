@@ -113,8 +113,8 @@ int main(int argc, char* argv[]){
         }
     }
     L_out<<N<<" "<<N<<" "<<L_Num<<std::endl;
-    for(int i = 0; i < N; i++){
-        for(int j = 0; j < N; j++){
+    for(int j = 0; j < N; j++){
+        for(int i = 0; i < N; i++){
             if(abs(L[i*N + j]) > eps){
                 L_out<<i+1<<" "<<j+1<<" "<<L[i*N + j]<<std::endl;
             }

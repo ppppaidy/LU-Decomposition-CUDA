@@ -9,3 +9,5 @@ dataset/*
 result/*
 *.exe
 .vscode/*
+*.mtx
+*.out
