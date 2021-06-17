@@ -1,3 +1,7 @@
+// ID : 1800013012
+// author : ppppaidy
+// problem 1
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
