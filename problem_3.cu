@@ -17,26 +17,23 @@ int N, Num;
 int *x_pos, *y_pos;
 double *val;
 
-__global__ void LU_Decompose(int *head, double *A, double *L, int *x_pos, int N, int Num){
-    int total = gridDim.x * blockDim.x;
+__global__ void LU_Decompose(int *head, double *A, double *L, int *x_pos, int N, int Num, int i){
     int id = blockIdx.x * blockDim.x + threadIdx.x;
-    for(int i = 0; i < N; i++){
-        int h_start = head[i];
-        int h_end = head[i+1];
+    int h_start = head[i];
+    if(id == 0) L[h_start] = 1;
+    int h_end = head[i+1];
+    int j = h_start + 1 + id;
+    if(j < h_end){
         double uii = A[h_start];
-        if(id == 0) L[h_start] = 1;
-        for(int j = h_start + 1 + id; j < h_end; j += total){
-            double lj = A[j]/uii;
-            L[j] = lj;
-            int pos = x_pos[j];
-            int p = head[pos];
-            for(int k = j; k < h_end; k++){
-                int qos = x_pos[k];
-                while(x_pos[p] != qos) p++;
-                A[p] -= lj * A[k];
-            }
+        double lj = A[j]/uii;
+        L[j] = lj;
+        int pos = x_pos[j];
+        int p = head[pos];
+        for(int k = j; k < h_end; k++){
+            int qos = x_pos[k];
+            while(x_pos[p] != qos) p++;
+            A[p] -= lj * A[k];
         }
-        __syncthreads();
     }
 }
 
@@ -142,10 +139,14 @@ int main(int argc, char* argv[]){
     cudaMemcpy(A_cuda, A, A_Num * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(x_pos_new_cuda, x_pos_new, A_Num * sizeof(int), cudaMemcpyHostToDevice);
 
-    int block_num = 1;
-    int thread_num = 1024;
-
-    LU_Decompose<<<block_num, thread_num>>>(head_cuda, A_cuda, L_cuda, x_pos_new_cuda, N, A_Num);
+    int block_num = 64;
+    int thread_num = 64;
+    
+    for(int i = 0; i < N; i++){
+        block_num = (fill_in[i].size() - 1) / thread_num + 1;
+        LU_Decompose<<<block_num, thread_num>>>(head_cuda, A_cuda, L_cuda, x_pos_new_cuda, N, A_Num, i);
+        cudaDeviceSynchronize();
+    }
 
     cudaMemcpy(A, A_cuda, A_Num * sizeof(double), cudaMemcpyDeviceToHost);
     cudaMemcpy(L, L_cuda, A_Num * sizeof(double), cudaMemcpyDeviceToHost);
